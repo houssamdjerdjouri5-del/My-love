@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A letter for you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
+<style>
+  :root { --night:#2a1a2d; --paper:#f7e6e1; --ink:#3b2232; --seal:#a3243b; --seal-dark:#7a1a2c; --gold:#d9b26f; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(ellipse at 50% 0%, #3d2640 0%, var(--night) 70%) fixed;
+    color: var(--ink);
+    font-family: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+    font-size: 1.45rem; line-height: 1.55; padding: 0 1rem 6rem;
+  }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, [contenteditable]:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+  /* ---------- Top bar ---------- */
+  #bar { position: fixed; top: .8rem; right: .8rem; display: flex; gap: .5rem; z-index: 5; }
+  #bar button, .tools button, .tools label {
+    background: var(--paper); color: var(--ink); border: 0; border-radius: 999px;
+    padding: .35rem 1rem; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  }
+  #reset { display: none; background: transparent !important; color: var(--gold) !important; box-shadow: none !important; }
+  body.editing #reset { display: block; }
+
+  /* ---------- Closed letter ---------- */
+  #cover { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; text-align: center; }
+  #cover h1 { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-weight: 500; font-size: clamp(2rem, 7vw, 3.4rem); color: var(--paper); margin: 0; }
+  #cover p { color: var(--gold); margin: 0; font-size: 1.2rem; }
+  #seal {
+    width: 120px; height: 120px; border-radius: 50%; border: 0;
+    background: radial-gradient(circle at 35% 30%, #c8374f, var(--seal) 55%, var(--seal-dark));
+    box-shadow: 0 8px 24px rgba(0,0,0,.5), inset 0 0 0 6px rgba(0,0,0,.12);
+    color: var(--paper); font-size: 3rem; line-height: 1; animation: beat 2.2s ease-in-out infinite;
+  }
+  @keyframes beat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  #cover.gone { display: none; }
+
+  /* ---------- Open letter ---------- */
+  #letter { display: none; max-width: 640px; margin: 0 auto; padding-top: 4rem; }
+  #letter.open { display: block; animation: unfold .9s ease-out both; }
+  @keyframes unfold { from { opacity: 0; transform: translateY(40px) scale(.96); } to { opacity: 1; transform: none; } }
+  .paper {
+    background: var(--paper); padding: clamp(1.6rem, 6vw, 3.2rem); border-radius: 4px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    background-image: repeating-linear-gradient(transparent 0 33px, rgba(163,36,59,.12) 33px 34px);
+    background-position: 0 1.2rem;
+  }
+  .paper h2 { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-weight: 500; font-size: 2.2rem; margin: 0 0 1rem; }
+  .paper p { margin: 0 0 1.1rem; max-width: 60ch; position: relative; }
+  .sign { text-align: right; font-weight: 600; font-size: 1.7rem; margin-top: 1.6rem; }
+
+  /* ---------- Photos ---------- */
+  #moments { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-weight: 500; color: var(--paper); font-size: 2rem; text-align: center; margin: 3rem 0 1.4rem; }
+  #photos { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  figure { margin: 0; background: #fff; padding: .7rem .7rem 1rem; box-shadow: 0 8px 20px rgba(0,0,0,.4); position: relative; }
+  figure:nth-child(odd) { transform: rotate(-2deg); }
+
+figure:nth-child(even) { transform: rotate(1.8deg); }
+  figure img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: #e9d7d2; }
+  figcaption { text-align: center; padding-top: .6rem; font-size: 1.25rem; min-height: 2.2rem; }
+  .x { display: none; position: absolute; top: -10px; right: -10px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--seal); color: #fff; font-size: 1.1rem; line-height: 1; }
+  body.editing .x { display: block; }
+
+  /* ---------- Edit mode ---------- */
+  body.editing [contenteditable] { outline: 2px dashed rgba(163,36,59,.45); outline-offset: 4px; border-radius: 3px; }
+  #cover h1[contenteditable], #cover p[contenteditable] { outline-color: rgba(217,178,111,.7); }
+  .tools { display: none; flex-wrap: wrap; gap: .6rem; justify-content: center; margin-top: 1.6rem; }
+  body.editing .tools { display: flex; }
+  .tools label { cursor: pointer; }
+  .tools input { display: none; }
+  #note { text-align: center; color: var(--gold); font-size: 1.1rem; min-height: 1.6rem; margin-top: .8rem; }
+
+  /* ---------- Music ---------- */
+  #music { position: fixed; right: 1rem; bottom: 1rem; display: none; align-items: center; gap: .6rem; background: var(--paper); color: var(--ink); border: 0; border-radius: 999px; padding: .6rem 1.1rem; font-size: 1.15rem; box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+
+  @media (prefers-reduced-motion: reduce) { #seal, #letter.open { animation: none; } }
+</style>
+</head>
+<body>
+
+<!-- ============ STARTING TEXT (anyone can change it on the page with the Edit button) ============ -->
+<script>
+  const DEFAULTS = {
+    title: "A letter for you",
+    coverLine: "Tap the seal to open",
+    greeting: "My dear love,",
+    paragraphs: [
+      "I wanted to write something that stays, so I made this little place just for you.",
+      "Every day with you feels softer, brighter, and more like home.",
+      "Thank you for being exactly who you are. I love you more than these words can say."
+    ],
+    signature: "Yours always",
+    momentsTitle: "Our moments",
+    // Optional: photo files in the same folder as index.html. You can also add photos with the Edit button.
+    photos: [
+      { src: "photo1.jpg", caption: "The day we met" },
+      { src: "photo2.jpg", caption: "My favourite smile" },
+      { src: "photo3.jpg", caption: "Us" },
+      { src: "photo4.jpg", caption: "Our best day" },
+      { src: "photo5.jpg", caption: "Always laughing" },
+      { src: "photo6.jpg", caption: "Forever" }
+    ],
+    song: "song.mp3",           // optional file next to index.html, or pick a song with the Edit button
+    songLabel: "Our song"
+  };
+</script>
+<!-- ================================================================================================ -->
+
+<div id="bar">
+  <button id="reset" type="button">Reset</button>
+  <button id="edit" type="button" aria-pressed="false">Edit</button>
+</div>
+
+<section id="cover">
+  <h1 id="title"></h1>
+  <button id="seal" type="button" aria-label="Open the letter">&#10084;</button>
+  <p id="coverLine"></p>
+</section>
+
+<main id="letter">
+  <article class="paper">
+    <h2 id="greeting"></h2>
+    <div id="body"></div>
+    <div class="sign" id="sign"></div>
+  </article>
+
+  <h2 id="moments"></h2>
+  <div id="photos"></div>
+
+  <div class="tools">
+    <button id="addP" type="button">+ Add a paragraph</button>
+    <label>+ Add photos <input id="addPhotos" type="file" accept="image/*" multiple></label>
+    <label>&#9835; Choose a song <input id="pickSong" type="file" accept="audio/*"></label>
+  </div>
+  <div id="note" role="status"></div>
+</main>
+
+<button id="music" type="button" aria-pressed="true">&#9835; <span id="musicLabel"></span></button>
+<audio id="audio" loop preload="auto"></audio>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const KEY = "loveLetter.v1";
+  let data;
+  try { data = JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { data = null; }
+  data = Object.assign({}, DEFAULTS, data || {});
+
+  const audio = $("audio"), music = $("music");
+  let editing = false;
+
+/* ---------- Build the page ---------- */
+  function addParagraph(text) {
+    const p = document.createElement("p");
+    p.textContent = text;
+    p.contentEditable = editing;
+    $("body").appendChild(p);
+    return p;
+  }
+  function addPhoto(src, caption, auto) {
+    const f = document.createElement("figure");
+    const img = document.createElement("img");
+    img.src = src; img.alt = caption || "Photo";
+    if (auto) img.onerror = () => f.remove();     // skips default files that are not there
+    const c = document.createElement("figcaption");
+    c.textContent = caption; c.contentEditable = editing;
+    const x = document.createElement("button");
+    x.className = "x"; x.type = "button"; x.textContent = "\u00d7"; x.setAttribute("aria-label", "Remove photo");
+    x.onclick = () => { f.remove(); save(); };
+    f.append(img, c, x);
+    $("photos").appendChild(f);
+  }
+  function build() {
+    $("title").textContent = data.title;
+    $("coverLine").textContent = data.coverLine;
+    $("greeting").textContent = data.greeting;
+    $("sign").textContent = data.signature;
+    $("moments").textContent = data.momentsTitle;
+    $("musicLabel").textContent = data.songLabel;
+    document.title = data.title;
+    data.paragraphs.forEach(t => addParagraph(t));
+    const isDefault = data.photos === DEFAULTS.photos;
+    data.photos.forEach(p => addPhoto(p.src, p.caption, isDefault));
+    audio.src = data.song;
+  }
+  build();
+
+  /* ---------- Save / load ---------- */
+  const textFields = ["title", "coverLine", "greeting", "sign", "moments"];
+  function note(t) { $("note").textContent = t; }
+  function save() {
+    data.title = $("title").textContent.trim();
+    data.coverLine = $("coverLine").textContent.trim();
+    data.greeting = $("greeting").textContent.trim();
+    data.signature = $("sign").textContent.trim();
+    data.momentsTitle = $("moments").textContent.trim();
+    data.paragraphs = [...$("body").children].map(p => p.textContent.trim()).filter(Boolean);
+    data.photos = [...$("photos").children].map(f => ({
+      src: f.querySelector("img").getAttribute("src"),
+      caption: f.querySelector("figcaption").textContent.trim()
+    }));
+    document.title = data.title;
+    try { localStorage.setItem(KEY, JSON.stringify(data)); note("Saved on this device."); }
+    catch (e) { note("Could not save (photos too large). Try fewer photos."); }
+  }
+
+  /* ---------- Edit mode ---------- */
+  const editable = () => [$("title"), $("coverLine"), $("greeting"), $("sign"), $("moments"),
+    ...$("body").children, ...document.querySelectorAll("figcaption")];
+  function setEditing(on) {
+    editing = on;
+    document.body.classList.toggle("editing", on);
+    $("edit").textContent = on ? "Done" : "Edit";
+    $("edit").setAttribute("aria-pressed", on);
+    editable().forEach(el => el.contentEditable = on);
+    if (!on) { $("body").querySelectorAll("p").forEach(p => { if (!p.textContent.trim()) p.remove(); }); save(); }
+    else note("");
+  }
+  $("edit").onclick = () => setEditing(!editing);
+  $("addP").onclick = () => { const p = addParagraph(""); p.focus(); };
+  document.addEventListener("input", () => { if (editing) { clearTimeout(window._t); window._t = setTimeout(save, 600); } });
+  $("reset").onclick = () => {
+    if (confirm("Erase your changes and go back to the starting letter?")) {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    }
+  };
+
+  /* ---------- Photos from the device (resized so they fit in storage) ---------- */
+  function shrink(file) {
+    return new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => {
+        const im = new Image();
+        im.onload = () => {
+          const k = Math.min(1, 900 / Math.max(im.width, im.height));
+          const c = document.createElement("canvas");
+
+c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+          c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+          res(c.toDataURL("image/jpeg", 0.8));
+        };
+        im.onerror = () => res(null);
+        im.src = r.result;
+      };
+      r.onerror = () => res(null);
+      r.readAsDataURL(file);
+    });
+  }
+  $("addPhotos").onchange = async e => {
+    for (const f of e.target.files) {
+      const url = await shrink(f);
+      if (url) addPhoto(url, "", false);
+    }
+    e.target.value = "";
+    setEditing(true); save();
+  };
+
+  /* ---------- Song from the device (plays now; pick it again after reopening the page) ---------- */
+  $("pickSong").onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    audio.src = URL.createObjectURL(f);
+    data.songLabel = f.name.replace(/\.[^.]+$/, "");
+    $("musicLabel").textContent = data.songLabel;
+    audio.play().then(() => { music.style.display = "flex"; music.style.opacity = 1; music.setAttribute("aria-pressed", "true"); }).catch(() => {});
+    note("Song ready. Pick it again if you reopen the page.");
+  };
+
+  /* ---------- Open the letter ---------- */
+  $("seal").onclick = () => {
+    $("cover").classList.add("gone");
+    $("letter").classList.add("open");
+    window.scrollTo(0, 0);
+    audio.play().then(() => { music.style.display = "flex"; }).catch(() => {});
+  };
+  music.onclick = () => {
+    const playing = !audio.paused;
+    playing ? audio.pause() : audio.play();
+    music.setAttribute("aria-pressed", String(!playing));
+    music.style.opacity = playing ? .7 : 1;
+  };
+</script>
+</body>
+</html>
